@@ -26,11 +26,11 @@ using namespace std;
   BaseAST *ast_val;
 }
 
-%token INT RETURN ADD SUB LN MUL DIV MOD
+%token INT RETURN ADD SUB LN MUL DIV MOD LT GT LE GE EQ NE LAND LOR
 %token <str_val> IDENT
 %token <int_val> INT_CONST
 
-%type <ast_val> FuncDef FuncType Block Stmt Exp UnaryExp PrimaryExp UnaryOp MulExp AddExp     
+%type <ast_val> FuncDef FuncType Block Stmt Exp UnaryExp PrimaryExp UnaryOp MulExp AddExp RelExp EqExp LAndExp LOrExp     
 %type <int_val> Number
 %%
 
@@ -38,7 +38,7 @@ CompUnit
   : FuncDef {
     auto comp_unit = make_unique<CompUnitAST>();
     comp_unit->func_def = unique_ptr<BaseAST>($1);
-    ast = move(comp_unit);
+    ast = std::move(comp_unit);
   }
   ;
 
@@ -78,9 +78,9 @@ Stmt
   ;
 
 Exp
-  : AddExp {
+  : LOrExp {
     auto ast = new ExpAST();
-    ast->addExp = unique_ptr<BaseAST>($1);
+    ast->lOrExp = unique_ptr<BaseAST>($1);
     $$ = ast;
   }
   ;
@@ -88,13 +88,13 @@ Exp
 UnaryExp
  : PrimaryExp {
   auto ast = new UnaryExpAST();
-  ast->primaryExp = unique_ptr<BaseAST>($1);
+  ast->primaryExp = unique_ptr<PrimaryExpAST>(dynamic_cast<PrimaryExpAST*> ($1));
   $$ = ast;
  }
  | UnaryOp UnaryExp {
   auto ast = new UnaryExpAST();
-  ast->unaryOp = unique_ptr<BaseAST>($1);
-  ast->unaryExp = unique_ptr<BaseAST>($2);
+  ast->unaryOp = unique_ptr<UnaryOpAST>(dynamic_cast<UnaryOpAST*> ($1));
+  ast->unaryExp = unique_ptr<UnaryExpAST>(dynamic_cast<UnaryExpAST*> ($2));
   $$ = ast;
  }
  ;
@@ -187,6 +187,93 @@ UnaryOp
  }
  ;
 
+ RelExp
+ : AddExp {
+  auto ast = new RelExpAST();
+  ast-> addExp = unique_ptr<BaseAST>($1);
+  $$ = ast;
+ }
+ | RelExp LT AddExp {
+  auto ast = new RelExpAST();
+  ast-> relExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("LT");
+  ast-> addExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+ }
+ | RelExp GT AddExp {
+  auto ast = new RelExpAST();
+  ast-> relExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("GT");
+  ast-> addExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+ }
+ | RelExp LE AddExp {
+  auto ast = new RelExpAST();
+  ast-> relExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("LE");
+  ast-> addExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+ }
+ | RelExp GE AddExp {
+  auto ast = new RelExpAST();
+  ast-> relExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("GE");
+  ast-> addExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+ }
+ ;
+
+EqExp
+: RelExp {
+  auto ast = new EqExpAST();
+  ast-> relExp = unique_ptr<BaseAST>($1);
+  $$ = ast;  
+}
+| EqExp EQ RelExp {
+  auto ast = new EqExpAST();
+  ast-> eqExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("EQ");
+  ast-> relExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+ }
+ | EqExp NE RelExp {
+  auto ast = new EqExpAST();
+  ast-> eqExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("NE");
+  ast-> relExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+ }
+ ;
+
+LAndExp
+: EqExp {
+  auto ast = new LAndExpAST();
+  ast-> eqExp = unique_ptr<BaseAST>($1);
+  $$ = ast; 
+}
+| LAndExp LAND EqExp {
+  auto ast = new LAndExpAST();
+  ast-> lAndExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("LAND");
+  ast-> eqExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+}
+;
+
+LOrExp
+: LAndExp {
+  auto ast = new LOrExpAST();
+  ast-> lAndExp = unique_ptr<BaseAST>($1);
+  $$ = ast; 
+}
+| LOrExp LOR LAndExp {
+  auto ast = new LOrExpAST();
+  ast-> lOrExp = unique_ptr<BaseAST>($1);
+  ast-> op = make_unique<string>("LOR");
+  ast-> lAndExp = unique_ptr<BaseAST>($3);
+  $$ = ast;
+}
+;
 
 %%
 

@@ -1,3 +1,3 @@
 int main() {
-  return +(- -!6);  // comments
+  return 1 <= 2;
 }

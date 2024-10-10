@@ -5,8 +5,9 @@
 #include <memory>
 #include <string>
 
-
-
+#include "../type/BaseAST.hpp"
+#include "../type/ASTVisitor.cpp"
+#include "../type/IRVisitor.cpp"
 
 using namespace std;
 
@@ -30,16 +31,24 @@ int main(int argc, const char *argv[]) {
   unique_ptr<BaseAST> ast;
   unique_ptr<BaseIR> ir;
   auto ret = yyparse(ast);
-  std::cout << "ret: " << ret << std::endl;
   assert(!ret);
 
-  ast->Dump();
+  // generate IR
+  CompUnitVisitor* visitor = new CompUnitVisitor();
+  unique_ptr<BaseIR> programIR = ast->accept(visitor);
+  programIR->Dump(outFile);
   cout << endl;
-
-  // generate risc-v
-  ast->ToIR()->Dump(outFile);
   cout << endl;
+  cout << endl;
+  // generate RiscV
+  IRProgramVisitor* irVisitor = new IRProgramVisitor();
+  unique_ptr<BaseRiscV> riscV = programIR->accept(irVisitor);
+  riscV->Dump(outFile);
+  cout << endl;
+  cout << "After gener RiscV" << endl;
 
   outFile.close();
+  delete(visitor);
+  delete(irVisitor);
   return 0;
 };

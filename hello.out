@@ -1,7 +1,14 @@
-fun @main(): i32 {
-%entry: 
- %0 = eq 6 0
- %1 = sub 0, %0
- %2 = sub 0, %1
- ret %2
+fun @main(): i32{
+%entry:
+  %0 = le 1, 2
+  ret %0
 }
+  .text
+  .global main
+main:
+  li   t0, 1
+  li   t1, 2
+  sgt  t1, t0, t1
+  seqz t1, t1
+  mov  a0, t1
+  ret  
